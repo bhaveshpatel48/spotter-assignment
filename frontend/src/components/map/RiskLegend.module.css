@@ -1,0 +1,20 @@
+.legend {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  font-size: 12px;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.note {
+  max-width: 170px;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+}

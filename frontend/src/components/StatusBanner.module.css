@@ -1,0 +1,25 @@
+.info,
+.error,
+.warning {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+}
+
+.info {
+  background: var(--color-primary-soft);
+}
+
+.error {
+  color: var(--color-error);
+  background: var(--color-error-soft);
+}
+
+.warning {
+  background: var(--color-warning-soft);
+}
+
+.requestId {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--color-muted);
+}

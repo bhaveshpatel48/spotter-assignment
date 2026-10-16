@@ -1,0 +1,48 @@
+:root {
+  --color-text: #1f2933;
+  --color-muted: #6b7785;
+  --color-border: #d9dee3;
+  --color-surface: #ffffff;
+  --color-background: #f4f6f8;
+  --color-primary: #1c64d4;
+  --color-primary-soft: #e7effb;
+  --color-error: #c92a2a;
+  --color-error-soft: #fff0f0;
+  --color-warning-soft: #fff8e1;
+  --radius: 8px;
+  --shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--color-text);
+  background: var(--color-background);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+/* Map popups above the legend and slider overlays. */
+.maplibregl-popup {
+  z-index: 1;
+}

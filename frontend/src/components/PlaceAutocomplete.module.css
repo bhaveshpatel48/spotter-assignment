@@ -1,0 +1,28 @@
+.field {
+  position: relative;
+}
+
+.list {
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 4px 0 0;
+  padding: 4px 0;
+  list-style: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.list li {
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.list li:hover,
+.active {
+  background: var(--color-primary-soft);
+}
