@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 
 from tests.conftest import straight_route
 from trip_planning.geo import snap
-from trip_planning.heatmap import build_heatmap, weather_grid
+from trip_planning.heatmap import build_heatmap, weather_locations
 from trip_planning.models import Coordinate, PointForecast
 from trip_planning.weather import weather_at
 
@@ -38,20 +38,28 @@ def test_eta_outside_forecast_is_clamped():
     assert weather_at(FORECAST, START + timedelta(days=5)).wind_mph == 9
 
 
-def test_weather_grid_gets_coarser_to_fit_budget():
-    routes = [straight_route(Coordinate(lat=33, lon=-97), Coordinate(lat=42, lon=-88))]
-    fine_step, fine = weather_grid(routes, max_points=1000)
-    coarse_step, coarse = weather_grid(routes, max_points=150)
-    assert fine_step == 0.2
-    assert len(coarse) <= 150 < len(fine)
-    assert coarse_step > fine_step
+LONG_ROUTE = straight_route(Coordinate(lat=33, lon=-97), Coordinate(lat=42, lon=-88), points=2000)
 
 
-def test_every_point_on_the_route_falls_in_a_grid_cell():
-    route = straight_route(Coordinate(lat=33, lon=-97), Coordinate(lat=42, lon=-88), points=2000)
-    step, grid = weather_grid([route], max_points=300)
-    cells = {(c.lat, c.lon) for c in grid}
-    assert all(snap(p, step) in cells for p in route.points)
+def test_locations_follow_the_road_at_7_mile_precision():
+    step, locations = weather_locations([LONG_ROUTE], [], max_locations=1000)
+    assert step == 0.1
+    keys = {(c.lat, c.lon) for c in locations}
+    assert all(snap(p, step) in keys for p in LONG_ROUTE.points[::10])
+    # A narrow line along the road, not a wide area: about one location per 0.1 degree.
+    assert len(locations) < 250
+
+
+def test_locations_include_every_checkpoint():
+    checkpoint = Coordinate(lat=36.03, lon=-93.97)
+    step, locations = weather_locations([LONG_ROUTE], [checkpoint], max_locations=1000)
+    assert snap(checkpoint, step) in {(c.lat, c.lon) for c in locations}
+
+
+def test_locations_get_coarser_only_when_over_budget():
+    step, locations = weather_locations([LONG_ROUTE], [], max_locations=60)
+    assert step > 0.1
+    assert len(locations) <= 60
 
 
 def test_heatmap_has_48_hourly_risk_values_with_load_rules():
@@ -68,7 +76,3 @@ def test_heatmap_has_48_hourly_risk_values_with_load_rules():
     assert len(light.risk) == 48
     assert set(light.risk) == {2}  # High
     assert set(heavy.risk) == {3}  # Severe
-
-
-def test_heatmap_skips_points_without_forecast():
-    assert build_heatmap([Coordinate(lat=35, lon=-97)], lambda _: None, 20_000) == []

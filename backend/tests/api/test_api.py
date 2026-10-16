@@ -74,7 +74,7 @@ def test_plan_returns_ranked_routes_checkpoints_and_heatmap(client, fake_provide
     assert checkpoint["eta"].endswith("Z")
     assert set(checkpoint["weather"]) == {"wind_mph", "gust_mph", "rain_in_hr", "snow_in_hr"}
     assert data["heatmap"]["hours"] == 48
-    assert data["heatmap"]["cell_size_deg"] >= 0.2
+    assert data["heatmap"]["cell_size_deg"] >= 0.1
     assert len(data["heatmap"]["points"][0]["risk"]) == 48
 
 

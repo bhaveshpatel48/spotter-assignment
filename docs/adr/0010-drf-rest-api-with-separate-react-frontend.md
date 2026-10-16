@@ -10,7 +10,7 @@ The two need a clear contract between them, and should be possible to build, tes
 
 ## Decision
 - **Backend:** Django 6.1 on Python 3.14, with **Django REST Framework (DRF)** exposing a JSON REST API under `/api/`.
-- **Frontend:** a standalone **React 19.2 + TypeScript** app built with **Vite**. It talks to the backend only through the REST API.
+- **Frontend:** a standalone **React 19.3 + TypeScript 6.0** app built with **Vite 8** on **Node 24 LTS**. TypeScript 7 is out, but typescript-eslint and other tools only support up to 6.0 so far, so the project stays on 6.0. Linting uses **oxlint** (the Vite template default), which needs no TypeScript API. It talks to the backend only through the REST API.
 - The two apps live in separate top-level folders in one repository: `backend/` and `frontend/`.
 - The API base URL is passed to the frontend at build time (`VITE_API_BASE_URL`).
 - The backend allows cross-origin requests only from the frontend's origin, using `django-cors-headers`.

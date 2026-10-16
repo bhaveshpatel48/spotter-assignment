@@ -73,6 +73,13 @@ def test_rate_limit_maps_to_quota_error(mock_http):
         open_meteo.get_hourly_forecasts(POINTS, START, END)
 
 
+def test_daily_limit_says_try_tomorrow(mock_http):
+    body = {"reason": "Daily API request limit exceeded. Please try again tomorrow.", "error": True}
+    mock_http(lambda _: httpx.Response(429, json=body))
+    with pytest.raises(ProviderQuotaExceeded, match="tomorrow"):
+        open_meteo.get_hourly_forecasts(POINTS, START, END)
+
+
 def test_server_error_is_retried_once(mock_http):
     responses = iter([httpx.Response(503), httpx.Response(200, json=FIXTURE)])
     requests = mock_http(lambda _: next(responses))

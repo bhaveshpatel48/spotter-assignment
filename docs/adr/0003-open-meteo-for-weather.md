@@ -27,7 +27,7 @@ Use **Open-Meteo's forecast API**:
 
 ## Consequences
 - No API key is needed. The US forecast uses NOAA models (HRRR and GFS).
-- Each location counts as at least 1 call (10,000/day, 5,000/hour, 600/minute). Each search therefore requests at most 550 locations: every checkpoint at about 7-mile precision first, then the heatmap grid. Correct checkpoint weather is prioritised over search throughput, so a second new search within the same minute may be asked to retry. Responses are cached for 30 minutes.
+- Each location counts as at least 1 call (10,000/day, 5,000/hour, 600/minute). Each search therefore requests at most 550 locations: every checkpoint and every ~5 miles of road, at about 7-mile precision. Correct checkpoint weather is prioritised over search throughput, so a second new search within the same minute may be asked to retry. Responses are cached for 30 minutes.
 - The forecast extends up to 16 days, so the whole trip must fit inside that window.
 - The free tier is non-commercial, which is acceptable for this assignment.
 - The map must show Open-Meteo attribution.

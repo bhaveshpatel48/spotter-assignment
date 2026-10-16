@@ -41,10 +41,10 @@ Routes are ranked in this order. A smaller value is better at each step, and eac
 5. Shortest travel time.
 
 ### Map and UI
-- All routes are drawn on a TomTom vector map (`monoLight` style), with the recommended route highlighted.
+- All routes are drawn on a TomTom vector map (grey `basic_mono-light` style), and the selected route is highlighted (the recommended one at first).
 - Checkpoint markers are coloured by risk level. Each popup shows the ETA, wind, gusts, rain, snow, and risk level, plus the reason for the risk.
 - A route summary panel shows distance, travel time, and miles at each risk level.
-- A weather heatmap is drawn along the trip corridor, with a forecast slider for the next 0–48 hours. The full 48 hours of data is loaded once, so moving the slider does not trigger any network request.
+- A weather heatmap is drawn along each route, with a forecast slider covering the 48 hours from the **departure hour**. Clicking a checkpoint moves the slider to its ETA. The full 48 hours of data is loaded once, so moving the slider does not trigger any network request.
 
 ### Re-planning
 - A driver who is already on the road can get an updated plan by searching again, using their **current location as the origin** and **now as the departure time**.
@@ -104,7 +104,7 @@ The brief leaves some details open. The application uses these interpretations.
 
 | Purpose | Provider | Free limit |
 |---|---|---|
-| Base map (vector, `monoLight`) | TomTom Maps SDK for JavaScript (built on MapLibre GL) | 50,000 tile requests/day |
+| Base map (vector, `basic_mono-light`) | TomTom Orbis map style, drawn with MapLibre GL JS | 50,000 tile requests/day |
 | Geocoding and autocomplete | TomTom Search | 2,500 non-tile requests/day, shared with routing |
 | Truck routing (up to 3 routes) | TomTom Routing | Shared with the line above |
 | Hourly weather forecast | Open-Meteo | 10,000 calls/day, no API key, non-commercial use |
@@ -112,7 +112,7 @@ The brief leaves some details open. The application uses these interpretations.
 To stay within these limits:
 - Autocomplete waits 300 ms after typing stops and needs at least 3 characters before it sends a request.
 - Geocoding results are cached in Django.
-- Weather for all checkpoints (at about 7-mile precision) and the heatmap grid is fetched in one bulk forecast request of at most 550 locations.
+- Weather for all checkpoints and the road between them (at about 7-mile precision) is fetched in one bulk forecast request of at most 550 locations.
 
 ---
 

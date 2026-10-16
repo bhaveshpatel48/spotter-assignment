@@ -15,10 +15,10 @@ The constraints are:
 - as few third-party integrations as possible, to keep maintenance low.
 
 ## Decision
-Use **TomTom** for all three, with a single API key:
+Use **TomTom** for all three, with one account (a server key, plus a browser key for the map only):
 - **Routing API** with `travelMode=truck`, `vehicleWeight`, and `vehicleCommercial=true`, plus `maxAlternatives` for extra routes.
 - **Search API** for geocoding and autocomplete, limited to the US.
-- **Maps SDK for JavaScript** (vector tiles, `monoLight` style) for the base map.
+- **Orbis map style** `basic_mono-light` (vector tiles), loaded directly into MapLibre GL JS, for the base map. The browser uses a separate key with only Map Display (Orbis) enabled, restricted to the site's domain.
 
 Free limits are 2,500 non-tile requests per day (shared by routing and search) and 50,000 tile requests per day. No card is needed.
 

@@ -7,7 +7,7 @@ import structlog
 from django.core.cache import cache
 from pydantic import BaseModel
 
-from core.errors import ProviderError
+from core.errors import ProviderError, ProviderQuotaExceeded
 from core.events import EventName
 from providers import http
 from trip_planning.models import PointForecast
@@ -95,6 +95,10 @@ def _fetch(points: Sequence[LatLon], start: datetime, end: datetime) -> list[Poi
             "end_hour": _hour_param(end),
         },
     )
+    if response.status_code == 429 and "daily" in response.text.lower():
+        raise ProviderQuotaExceeded(
+            "The weather service's free daily limit is used up. Please try again tomorrow."
+        )
     http.raise_for_status(PROVIDER, "forecast", response)
     body = response.json()
     # A single location comes back as an object; several come back as a list in request order.

@@ -15,7 +15,7 @@ from trip_planning import ranking
 from trip_planning.checkpoints import place_checkpoints
 from trip_planning.enums import RiskLevel
 from trip_planning.geo import snap
-from trip_planning.heatmap import HEATMAP_HOURS, build_heatmap, weather_grid
+from trip_planning.heatmap import HEATMAP_HOURS, build_heatmap, weather_locations
 from trip_planning.models import (
     BoundingBox,
     Checkpoint,
@@ -45,10 +45,6 @@ MIN_MILES_FOR_FALLBACK = 50
 FORECAST_HORIZON = timedelta(days=16)
 # Open-Meteo allows 600 calls/minute and each location counts as at least one call.
 MAX_WEATHER_LOCATIONS = 550
-# Checkpoint weather is looked up at about 7-mile precision (0.1 degrees).
-CHECKPOINT_SNAP_DEG = 0.1
-# The heatmap always gets at least this many of the locations.
-MIN_HEATMAP_POINTS = 150
 
 logger = structlog.get_logger(__name__)
 
@@ -76,28 +72,30 @@ def plan_trip(
         for route in routes
     ]
 
-    window_start = floor_hour(now)
+    # The forecast window, and the heatmap's hour 0, start at the departure hour, so the
+    # 0-48 h slider covers the trip itself even when departure is days away.
+    window_start = floor_hour(request.departure_time)
     latest_eta = max(route_positions[-1].eta for route_positions in positions)
     if latest_eta > now + FORECAST_HORIZON - HOUR:
         raise TripOutsideForecastRange()
     hours = _forecast_hours(window_start, latest_eta)
 
-    # One bulk request: exact checkpoint locations first, the heatmap grid gets the rest.
-    checkpoint_step, checkpoint_keys = _checkpoint_weather_keys(positions)
-    grid_step, grid = weather_grid(routes, MAX_WEATHER_LOCATIONS - len(checkpoint_keys))
-    keys = sorted(checkpoint_keys | {(c.lat, c.lon) for c in grid})
-    forecasts = fetch_forecasts(keys, window_start, window_start + (hours - 1) * HOUR)
+    # One bulk request for every checkpoint and the road between them.
+    checkpoint_coordinates = [
+        p.coordinate for route_positions in positions for p in route_positions
+    ]
+    step, locations = weather_locations(routes, checkpoint_coordinates, MAX_WEATHER_LOCATIONS)
+    forecasts = fetch_forecasts(
+        [(c.lat, c.lon) for c in locations], window_start, window_start + (hours - 1) * HOUR
+    )
 
-    def checkpoint_forecast(coordinate: Coordinate) -> PointForecast:
-        return forecasts[snap(coordinate, checkpoint_step)]
-
-    def grid_forecast(coordinate: Coordinate) -> PointForecast | None:
-        return forecasts.get((coordinate.lat, coordinate.lon))
+    def forecast_at(coordinate: Coordinate) -> PointForecast:
+        return forecasts[snap(coordinate, step)]
 
     summaries, checkpoints = [], []
     for route, route_positions in zip(routes, positions, strict=True):
         route_checkpoints = _assess_checkpoints(
-            route_positions, checkpoint_forecast, request.load_weight_lb
+            route_positions, forecast_at, request.load_weight_lb
         )
         checkpoints.append(route_checkpoints)
         summaries.append(_summarize(route, route_checkpoints, request.departure_time))
@@ -123,8 +121,8 @@ def plan_trip(
         heatmap=Heatmap(
             start_time=window_start,
             hours=HEATMAP_HOURS,
-            cell_size_deg=grid_step,
-            points=tuple(build_heatmap(grid, grid_forecast, request.load_weight_lb)),
+            cell_size_deg=step,
+            points=tuple(build_heatmap(locations, forecast_at, request.load_weight_lb)),
         ),
     )
 
@@ -164,20 +162,6 @@ def _forecast_hours(window_start: datetime, latest_eta: datetime) -> int:
     """Hours of forecast needed, rounded up to whole days so cached forecasts are reused."""
     needed = max(HEATMAP_HOURS, math.ceil((latest_eta - window_start) / HOUR) + 2)
     return math.ceil(needed / 24) * 24
-
-
-def _checkpoint_weather_keys(
-    positions: Sequence[Sequence[CheckpointPosition]],
-) -> tuple[float, set[LatLon]]:
-    """Checkpoint locations snapped to 0.1 degrees. Very long trips with close spacing can
-    exceed the budget, so the snapping gets coarser only until they fit."""
-    coordinates = [p.coordinate for route_positions in positions for p in route_positions]
-    step = CHECKPOINT_SNAP_DEG
-    while True:
-        keys = {snap(c, step) for c in coordinates}
-        if len(keys) <= MAX_WEATHER_LOCATIONS - MIN_HEATMAP_POINTS:
-            return step, keys
-        step = round(step + CHECKPOINT_SNAP_DEG, 4)
 
 
 def _assess_checkpoints(

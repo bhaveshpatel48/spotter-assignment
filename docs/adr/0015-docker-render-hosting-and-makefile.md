@@ -36,7 +36,7 @@ make dev       # run backend + frontend locally without Docker
 make up        # build and run everything with docker compose
 make down      # stop docker compose
 make test      # backend + frontend tests
-make lint      # ruff + eslint
+make lint      # ruff + oxlint + tsc
 ```
 
 ## Alternatives considered

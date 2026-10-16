@@ -82,15 +82,15 @@ def test_recommends_the_route_avoiding_bad_weather():
     assert plan.warnings == ()
 
 
-def test_heatmap_starts_at_current_hour_with_48_values():
+def test_heatmap_starts_at_departure_hour_with_48_values():
     plan = plan_trip(
         trip(),
         fetch_routes=FakeRoutes([detour(0.0), detour(-0.6), detour(0.6)]),
         fetch_forecasts=windy_east_of(-97.05),
         now=NOW,
     )
-    assert plan.heatmap.start_time == floor_hour(NOW)
-    assert plan.heatmap.cell_size_deg == 0.2  # a short trip fits the finest grid
+    assert plan.heatmap.start_time == floor_hour(DEPARTURE)
+    assert plan.heatmap.cell_size_deg == 0.1  # a short trip fits the finest grid
     assert plan.heatmap.points
     assert all(len(p.risk) == 48 for p in plan.heatmap.points)
 
@@ -151,7 +151,7 @@ def test_weather_is_requested_once_for_the_whole_trip():
     )
     [(count, start, end)] = calls
     assert count <= 550
-    assert start == floor_hour(NOW)
+    assert start == floor_hour(DEPARTURE)
     assert end - start >= timedelta(hours=47)
 
 
@@ -171,3 +171,17 @@ def test_every_checkpoint_gets_weather_at_its_own_location():
     for route in plan.routes:
         for checkpoint in route.checkpoints:
             assert snap(checkpoint.coordinate, 0.1) in requested
+
+
+def test_slider_covers_a_departure_days_away():
+    departure = NOW + timedelta(days=3, hours=4, minutes=20)
+    plan = plan_trip(
+        trip(departure_time=departure),
+        fetch_routes=FakeRoutes([detour(0.0), detour(-0.6), detour(0.6)]),
+        fetch_forecasts=windy_east_of(0),
+        now=NOW,
+    )
+    start = plan.heatmap.start_time
+    assert start == floor_hour(departure)
+    arrival = plan.routes[0].summary.arrival_time
+    assert start <= arrival <= start + timedelta(hours=48)

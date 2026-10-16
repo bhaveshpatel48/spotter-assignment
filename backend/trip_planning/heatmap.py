@@ -1,50 +1,48 @@
-"""The heatmap grid along the trip corridor and its 48-hour risk values (ADR-0009)."""
+"""Weather locations along the routes and the 48-hour heatmap values (ADR-0009).
+
+One set of locations serves both checkpoints and the heatmap: every checkpoint plus a sample
+every few miles along every route, rounded to a grid so nearby points share one forecast.
+The heatmap therefore follows each road instead of covering a wide area around it.
+"""
 
 from collections.abc import Callable, Sequence
 
-from trip_planning.geo import resample
+from trip_planning.geo import resample, snap
 from trip_planning.models import Coordinate, HeatmapPoint, PointForecast, Route
 from trip_planning.risk import risk_level
 
-GRID_START_STEP_DEG = 0.2
-GRID_STEP_INCREMENT_DEG = 0.1
-# Route samples must be closer together than one grid step, so no cell along the route is missed.
-SAMPLE_STEP_MILES = 5.0
+# About 7 miles. The grid only gets coarser if a very long trip would exceed the budget.
+SNAP_STEP_DEG = 0.1
+# Closer together than one grid cell, so no stretch of road is skipped.
+ROUTE_SAMPLE_MILES = 5.0
 HEATMAP_HOURS = 48
 
 
-def weather_grid(routes: Sequence[Route], max_points: int) -> tuple[float, list[Coordinate]]:
-    """The finest grid (step in degrees, points) whose corridor around all routes fits the budget.
-
-    The corridor covers each route cell and its 8 neighbours, so it is about three cells wide.
-    """
-    samples = [p for route in routes for p in resample(route.points, SAMPLE_STEP_MILES)]
-    step = GRID_START_STEP_DEG
+def weather_locations(
+    routes: Sequence[Route], checkpoints: Sequence[Coordinate], max_locations: int
+) -> tuple[float, list[Coordinate]]:
+    """The grid step (degrees) and the locations to fetch weather for, within the budget."""
+    points = [
+        *checkpoints,
+        *(point for route in routes for point in resample(route.points, ROUTE_SAMPLE_MILES)),
+    ]
+    step = SNAP_STEP_DEG
     while True:
-        cells = set()
-        for point in samples:
-            row, col = round(point.lat / step), round(point.lon / step)
-            cells.update((row + dr, col + dc) for dr in (-1, 0, 1) for dc in (-1, 0, 1))
-        if len(cells) <= max_points:
-            points = [
-                Coordinate(lat=round(row * step, 4), lon=round(col * step, 4))
-                for row, col in sorted(cells)
-            ]
-            return step, points
-        step = round(step + GRID_STEP_INCREMENT_DEG, 4)
+        keys = {snap(point, step) for point in points}
+        if len(keys) <= max_locations:
+            return step, [Coordinate(lat=lat, lon=lon) for lat, lon in sorted(keys)]
+        step = round(step + SNAP_STEP_DEG, 4)
 
 
 def build_heatmap(
-    grid: Sequence[Coordinate],
-    forecast_for: Callable[[Coordinate], PointForecast | None],
+    locations: Sequence[Coordinate],
+    forecast_for: Callable[[Coordinate], PointForecast],
     load_weight_lb: int,
 ) -> list[HeatmapPoint]:
-    """Risk level for each grid point and each of the first 48 forecast hours."""
+    """Risk level for each location and each of the first 48 forecast hours."""
     points = []
-    for coordinate in grid:
+    for coordinate in locations:
         forecast = forecast_for(coordinate)
-        if forecast is None:
-            continue
         hours = min(HEATMAP_HOURS, len(forecast.wind_mph))
         risk = tuple(
             int(

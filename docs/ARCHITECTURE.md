@@ -17,7 +17,7 @@ Two other documents cover the rest:
 ```
 ┌──────────────────────────── Browser ────────────────────────────┐
 │  React 19 + TypeScript (Vite)                                   │
-│  TomTom Maps SDK (MapLibre GL) — monoLight base map             │
+│  MapLibre GL + TomTom Orbis style — mono-light base map         │
 └───────────┬───────────────────────────────────┬─────────────────┘
             │ REST/JSON  (/api/*)               │ map tiles (direct, domain-restricted key)
             ▼                                   ▼
@@ -33,7 +33,7 @@ Two other documents cover the rest:
 
 | Part | Technology | Hosting |
 |---|---|---|
-| Frontend | React 19.2, TypeScript, Vite, TomTom Maps SDK for JS | Render static site |
+| Frontend | Node 24 LTS, React 19.3, TypeScript 6.0, Vite 8, MapLibre GL 6, oxlint, Vitest | Render static site |
 | Backend | Python 3.14, Django 6.1, DRF, pydantic, structlog, httpx, Gunicorn | Render web service (Docker) |
 | Data providers | TomTom (search, routing, tiles), Open-Meteo (weather) | External |
 
@@ -48,13 +48,14 @@ Two other documents cover the rest:
 3. Django validates the request with a serializer, then `trip_planning.service.plan_trip()` runs:
    1. **Routes.** One TomTom truck route request with `maxAlternatives=5`. Keep the main route plus the 2 most different alternatives. If fewer than 3 routes remain, make one extra request with `avoidAreas` ([ADR-0005](adr/0005-three-route-strategy.md)).
    2. **Checkpoints.** Place a checkpoint every N miles along each route, plus one at the destination. Estimate each checkpoint's ETA from TomTom's `progress[]` data, adding rest breaks if that option is on ([ADR-0006](adr/0006-checkpoint-eta-and-forecast-matching.md), [ADR-0008](adr/0008-optional-driver-rest-breaks.md)).
-   3. **Weather locations.** Every checkpoint gets its own location, rounded to 0.1° (about 7 miles). The heatmap grid around the routes uses the rest of the 550-location budget (section 6).
-   4. **Weather.** Make **one bulk Open-Meteo request** for all locations, covering `now` to `max(now + 48 h, latest ETA)`, and cache the result.
+   3. **Weather locations.** Every checkpoint, plus a sample every 5 miles along every route, rounded to 0.1° (about 7 miles) so nearby points share one forecast. The same locations serve checkpoints and the heatmap (section 6).
+   4. **Weather.** Make **one bulk Open-Meteo request** for all locations, covering the **departure hour** to `max(departure + 48 h, latest ETA)`, and cache the result.
    5. **Risk.** Classify each checkpoint at its ETA hour, and each grid point for every hour from 0 to 47. The rules are in [ADR-0007](adr/0007-risk-classification-and-ranking.md).
    6. **Ranking.** Add up the miles at each risk level per route, rank the routes, and mark the recommended one.
 4. The serializer builds the response.
 5. React draws the routes, checkpoints, summaries, and heatmap.
    - The slider only changes which hour the heatmap displays. It makes no network request ([ADR-0009](adr/0009-maplibre-heatmap-with-preloaded-48h-data.md)).
+   - Clicking a checkpoint moves the slider to that checkpoint's ETA, so the dot and the shading show the same moment.
 
 ---
 
@@ -138,6 +139,7 @@ Format rules:
 - `geometry` uses GeoJSON order, `[lon, lat]`.
 - All times are UTC. The frontend converts them to local time for display.
 - Risk levels are enum names (`LOW` … `NO_TRAVEL`).
+- `heatmap.start_time` is the **departure hour**, so slider hour 0 is departure and hour 47 is 47 hours later, even when departure is days away.
 - `heatmap.points[].risk[h]` is the risk level as a number from 0 to 4 at hour `start_time + h`, including the load rules.
 - `heatmap.cell_size_deg` is the spacing between neighbouring heatmap points (0.2° or coarser on long trips). The frontend uses it to size each heatmap point so neighbours blend into one band.
 - `warnings[].code` is `FEWER_ROUTES` (fewer than 3 distinct routes exist) or `NO_SAFE_ROUTE` (every route has No Travel miles).
@@ -185,7 +187,7 @@ backend/
 │   ├── risk.py             thresholds, load rules, worst-of combination
 │   ├── ranking.py          miles by level, average risk, ordering
 │   ├── weather.py          match forecast hours to ETAs
-│   ├── heatmap.py          corridor grid + 48-hour risk values
+│   ├── heatmap.py          weather locations along the routes + 48-hour risk values
 │   └── service.py          plan_trip(): runs the whole pipeline
 ├── api/                    the only Django app
 │   ├── serializers.py      PlanRequest/PlanResponse, GeocodeResponse
@@ -209,27 +211,32 @@ Layering rules:
 frontend/src/
 ├── api/            client.ts (fetch wrapper, error mapping), types.ts (mirrors the API contract)
 ├── hooks/          useDebouncedValue.ts, usePlaceSearch.ts, usePlanTrip.ts
-├── lib/            risk.ts (colours, labels), format.ts (miles, durations, local times)
+├── lib/            risk.ts (colours, labels), format.ts (miles, durations, local times),
+│                   mapData.ts (API data → GeoJSON, map style expressions; unit-tested)
 ├── components/
-│   ├── SearchForm.tsx        inputs + submit
+│   ├── SearchForm.tsx        inputs + submit (pre-filled with Denver → Salt Lake City)
 │   ├── PlaceAutocomplete.tsx reusable for origin and destination
-│   ├── RouteList.tsx  / RouteCard.tsx   summaries; click to select a route
+│   ├── RouteCard.tsx         one route's summary; click to select it
 │   ├── RiskBadge.tsx         colour + text label (accessible)
-│   ├── ForecastSlider.tsx    0–47 h, at most one update per animation frame
-│   ├── StatusBanner.tsx      loading / "waking up server" / errors with request ID
+│   ├── StatusBanner.tsx      loading / "waking up server" / errors with request ID / warnings
 │   └── map/
-│       ├── MapView.tsx           creates the TomTom map (monoLight)
-│       ├── RoutesLayer.tsx       3 route lines, recommended one highlighted
-│       ├── CheckpointsLayer.tsx  circles coloured by risk, with popups
-│       └── HeatmapLayer.tsx      MapLibre heatmap; reads the hour h value from each point's risk list
-└── App.tsx         holds the state: plan result, selected route, slider hour
+│       ├── MapView.tsx           creates the map (TomTom mono-light style), renders the layers
+│       ├── useGeoJsonLayers.ts   shared hook: add source + layers once, keep data in sync
+│       ├── WeatherLayer.tsx      risk-coloured blurred circles + ForecastSlider
+│       ├── ForecastSlider.tsx    0–47 h after departure, with the forecast time
+│       ├── RoutesLayer.tsx       route lines, selected one highlighted, click to select
+│       ├── CheckpointsLayer.tsx  circles coloured by risk, with React-rendered popups
+│       └── RiskLegend.tsx        the five risk colours
+└── App.tsx         holds the state: plan result and selected route
 ```
 
-State lives in `useState` in `App`, passed down as props. There is no store library.
+State lives in `useState`, with no store library:
+- `App` holds the plan and the selected route.
+- `App` also holds the slider hour, so clicking a checkpoint can move the slider to its ETA. Moving the slider re-renders `App`, but the map layers' effects only re-run when their own data changes, so the only map work is one paint-expression update.
 
 Map layers, bottom to top:
 1. base map;
-2. heatmap;
+2. weather (under the map labels, so place names stay readable);
 3. route lines;
 4. checkpoints.
 
@@ -244,8 +251,8 @@ Map layers, bottom to top:
 | Forecast hour | Rain and snow use the hour that contains the ETA. Wind uses the nearest hour. |
 | Risk | Worst of the wind, rain, and snow levels, then the load rules can raise it. Boundary rules are in [ADR-0007](adr/0007-risk-classification-and-ranking.md). |
 | Distinct routes | Sample a point every 0.5 miles on each alternative. An alternative's distinctness is the share of its sample points more than about 1 km from every route already chosen. Keep the best 2 above 10%. |
-| Checkpoint weather | Each checkpoint's location is rounded to 0.1° (about 7 miles), so checkpoints keep their own forecast. Only if a very long trip with 10-mile spacing would exceed 400 locations does the rounding get coarser, just enough to fit. |
-| Heatmap grid | Covers each route cell and its 8 neighbours. It starts at 0.2° and gets 0.1° coarser until it fits the locations left after checkpoints (at least 150). |
+| Weather locations | Every checkpoint plus a sample every 5 miles along every route, rounded to 0.1° (about 7 miles). One set of locations serves checkpoints and the heatmap. The rounding only gets coarser if a very long trip would exceed 550 locations. |
+| Heatmap | One point per weather location, so the shading follows each road (a band about 15 miles wide) and different routes stay visually separate. Each point is drawn as a blurred circle sized from `cell_size_deg`. |
 | Weather volume | At most **550 locations** per uncached plan, under Open-Meteo's 600 calls/minute. A second *new* search within the same minute can be refused (`429`); the API then returns `PROVIDER_QUOTA_EXCEEDED` with "try again in a minute". Repeated or overlapping searches come from the 30-minute cache. |
 
 ---
@@ -275,7 +282,7 @@ Map layers, bottom to top:
 | `trip_planning/checkpoints.py`, `rest_breaks.py` | Checkpoint spacing, destination checkpoint, ETA estimation, break insertion | pytest with small handmade routes |
 | `providers/` | Parsing real responses, error mapping (403, 429, timeout) | Saved JSON fixtures, mocked httpx |
 | `api/` | Validation errors, response shape, error shape, `X-Request-ID` header | DRF `APITestCase` with fake providers |
-| Frontend `lib/` + hooks | Risk colours and labels, formatting, debounce | Vitest |
+| Frontend `lib/` | Formatting, GeoJSON conversion, hour blending, risk colour ramp, circle radius | Vitest |
 | Heatmap smoothness | Time per slider update stays under one frame (16 ms) | Manual check in the Chrome Performance panel. The result goes in the README. |
 
 ---

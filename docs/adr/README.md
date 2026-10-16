@@ -15,7 +15,7 @@ For what the application does and does not do, see [SCOPE.md](../SCOPE.md).
 | [0006](0006-checkpoint-eta-and-forecast-matching.md) | Checkpoint ETAs and matching them to forecast hours | Accepted |
 | [0007](0007-risk-classification-and-ranking.md) | Risk classification and route ranking | Accepted |
 | [0008](0008-optional-driver-rest-breaks.md) | Driver rest breaks as an opt-in toggle | Accepted |
-| [0009](0009-maplibre-heatmap-with-preloaded-48h-data.md) | GPU heatmap with 48 hours of data preloaded | Accepted |
+| [0009](0009-maplibre-heatmap-with-preloaded-48h-data.md) | GPU weather layer with 48 hours of data preloaded | Accepted |
 | [0010](0010-drf-rest-api-with-separate-react-frontend.md) | Django REST Framework API with a separate React frontend | Accepted |
 | [0011](0011-drf-serializers-and-enums.md) | DRF serializers at the API boundary, pydantic models internally, enums for fixed values | Accepted |
 | [0012](0012-sqlite-configured-but-unused.md) | SQLite configured but unused | Accepted |
