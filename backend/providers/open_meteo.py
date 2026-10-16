@@ -16,7 +16,8 @@ PROVIDER = "open_meteo"
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 HOURLY_VARIABLES = "wind_speed_10m,wind_gusts_10m,rain,showers,snowfall"
 LOCATIONS_PER_REQUEST = 500
-CACHE_SECONDS = 30 * 60
+# Forecasts update about hourly; caching for an hour saves the free daily quota (10,000 calls).
+CACHE_SECONDS = 60 * 60
 # Bulk requests can take several seconds, longer than the default provider timeout.
 TIMEOUT_SECONDS = 30.0
 SECONDS_PER_HOUR = 3600

@@ -14,7 +14,7 @@
 - Autocomplete waits **300 ms after typing stops** and needs **at least 3 characters** before it sends a request.
 - Django caches responses:
   - geocoding results, keyed on the normalised query text;
-  - weather responses, keyed on the grid cell and time window, for 30–60 minutes.
+  - weather responses, keyed on the grid cell and time window, for 60 minutes.
 - Weather for all checkpoints and the road between them is fetched in one bulk Open-Meteo request of at most 550 locations (see [ARCHITECTURE.md §6](../ARCHITECTURE.md#6-key-algorithms-summary)).
 - Each provider is wrapped in a small interface (`geocode()`, `get_routes()`, `get_forecast()`), so providers can be swapped and tests can use fakes.
 

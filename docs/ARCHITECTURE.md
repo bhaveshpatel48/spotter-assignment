@@ -253,7 +253,7 @@ Map layers, bottom to top:
 | Distinct routes | Sample a point every 0.5 miles on each alternative. An alternative's distinctness is the share of its sample points more than about 1 km from every route already chosen. Keep the best 2 above 10%. |
 | Weather locations | Every checkpoint plus a sample every 5 miles along every route, rounded to 0.1° (about 7 miles). One set of locations serves checkpoints and the heatmap. The rounding only gets coarser if a very long trip would exceed 550 locations. |
 | Heatmap | One point per weather location, so the shading follows each road (a band about 15 miles wide) and different routes stay visually separate. Each point is drawn as a blurred circle sized from `cell_size_deg`. |
-| Weather volume | At most **550 locations** per uncached plan, under Open-Meteo's 600 calls/minute. A second *new* search within the same minute can be refused (`429`); the API then returns `PROVIDER_QUOTA_EXCEEDED` with "try again in a minute". Repeated or overlapping searches come from the 30-minute cache. |
+| Weather volume | At most **550 locations** per uncached plan, under Open-Meteo's 600 calls/minute. A second *new* search within the same minute can be refused (`429`); the API then returns `PROVIDER_QUOTA_EXCEEDED` with "try again in a minute". Repeated or overlapping searches come from the 60-minute cache. The free daily limit (10,000 calls) allows about 18–20 new searches a day; past it, the API says to try again tomorrow. |
 
 ---
 
