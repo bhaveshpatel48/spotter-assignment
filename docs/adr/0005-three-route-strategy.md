@@ -8,7 +8,7 @@ The brief asks for **3 route options**. TomTom's `maxAlternatives` is an upper l
 Short trips, or trips with only one sensible corridor, may return just 1 or 2 routes. Alternatives can also share most of their road with the main route.
 
 ## Decision
-1. Request the main route with `maxAlternatives=5`.
+1. Request the main route with `maxAlternatives=2`: main + 2 alternatives = the 3 routes shown. Higher values gave no extra alternatives on short trips (Denver → Salt Lake City returned 2 even when asked for 5) and made TomTom exceed its compute limit on cross-country trips (Seattle → Miami: `COMPUTE_TIME_LIMIT_EXCEEDED` after 31 s with 5, 13 s with 2).
 2. Keep the main route plus the **2 alternatives that differ most** from it, measured by the share of road length not shared with the main route.
 3. If fewer than 3 routes remain, make **one extra request** with `avoidAreas`: a box of about 30×30 km centred on the midpoint of the main route. This forces a different path. Add the result if it is distinct.
 4. If there are still fewer than 3 routes, return what was found and tell the user that only N practical routes exist.

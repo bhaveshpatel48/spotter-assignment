@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import type { Checkpoint, PlanRequest } from './api/types'
 import styles from './App.module.css'
+import { RankingExplainer } from './components/RankingExplainer'
 import { RouteCard } from './components/RouteCard'
 import { SearchForm } from './components/SearchForm'
 import { StatusBanner } from './components/StatusBanner'
@@ -21,6 +22,10 @@ export default function App() {
   const selectedRoute =
     plan?.routes.find((route) => route.id === selectedId) ??
     plan?.routes.find((route) => route.id === plan.recommended_route_id)
+
+  const fastestSeconds = Math.min(
+    ...(plan?.routes.map((route) => route.summary.travel_time_seconds) ?? []),
+  )
 
   function handleSubmit(request: PlanRequest) {
     setSelectedId(null) // a new plan starts on its recommended route
@@ -51,10 +56,12 @@ export default function App() {
               <RouteCard
                 key={route.id}
                 route={route}
+                fastestSeconds={fastestSeconds}
                 selected={route.id === selectedRoute?.id}
                 onSelect={setSelectedId}
               />
             ))}
+            <RankingExplainer />
           </section>
         )}
       </aside>

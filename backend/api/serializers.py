@@ -136,6 +136,7 @@ class PlannedRouteSerializer(serializers.Serializer):
     id = serializers.CharField()
     rank = serializers.IntegerField()
     is_recommended = serializers.BooleanField()
+    ranking_reason = serializers.CharField()
     summary = RouteSummarySerializer()
     geometry = GeometryField()
     checkpoints = CheckpointSerializer(many=True)

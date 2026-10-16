@@ -50,6 +50,8 @@ export interface PlannedRoute {
   id: string
   rank: number
   is_recommended: boolean
+  /** Why the route ranks where it does, e.g. "Same weather risk as Route 2, and 1 h 23 m faster." */
+  ranking_reason: string
   summary: RouteSummary
   geometry: [lon: number, lat: number][]
   checkpoints: Checkpoint[]

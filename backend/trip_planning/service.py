@@ -40,7 +40,9 @@ from trip_planning.route_selection import (
 from trip_planning.weather import HOUR, floor_hour, weather_at
 
 LB_TO_KG = 0.45359237
-ALTERNATIVES_REQUESTED = 5
+# Main route + 2 alternatives = the 3 routes the UI shows. Asking for more gave no extra
+# alternatives on short trips and made TomTom exceed its compute limit on cross-country ones.
+ALTERNATIVES_REQUESTED = 2
 MIN_MILES_FOR_FALLBACK = 50
 FORECAST_HORIZON = timedelta(days=16)
 # Open-Meteo allows 600 calls/minute and each location counts as at least one call.
@@ -101,11 +103,13 @@ def plan_trip(
         summaries.append(_summarize(route, route_checkpoints, request.departure_time))
 
     order = ranking.rank_order(summaries)
+    reasons = ranking.ranking_reasons(summaries)
     planned = tuple(
         PlannedRoute(
             id=f"route-{index + 1}",
             rank=rank,
             is_recommended=rank == 1,
+            ranking_reason=reasons[index],
             summary=summaries[index],
             geometry=routes[index].points,
             checkpoints=tuple(checkpoints[index]),

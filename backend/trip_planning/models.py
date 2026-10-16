@@ -97,6 +97,8 @@ class PlannedRoute(FrozenModel):
     id: str
     rank: int
     is_recommended: bool
+    # Why this route ranks where it does, e.g. "Same weather risk as Route 2, and 1 h 23 m faster."
+    ranking_reason: str
     summary: RouteSummary
     geometry: tuple[Coordinate, ...]
     checkpoints: tuple[Checkpoint, ...]

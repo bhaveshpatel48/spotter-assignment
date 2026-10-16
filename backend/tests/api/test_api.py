@@ -60,6 +60,7 @@ def test_plan_returns_ranked_routes_checkpoints_and_heatmap(client, fake_provide
     data = response.json()
 
     assert data["recommended_route_id"] == data["routes"][0]["id"]
+    assert "Route 2" in data["routes"][0]["ranking_reason"]
     route = data["routes"][0]
     assert set(route["summary"]["miles_by_risk"]) == {
         "LOW",

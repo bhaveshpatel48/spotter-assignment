@@ -46,7 +46,7 @@ Two other documents cover the rest:
    - Results are cached in Django.
 2. The user sets the departure time, load weight, and checkpoint spacing, then submits. This sends `POST /api/plan`.
 3. Django validates the request with a serializer, then `trip_planning.service.plan_trip()` runs:
-   1. **Routes.** One TomTom truck route request with `maxAlternatives=5`. Keep the main route plus the 2 most different alternatives. If fewer than 3 routes remain, make one extra request with `avoidAreas` ([ADR-0005](adr/0005-three-route-strategy.md)).
+   1. **Routes.** One TomTom truck route request with `maxAlternatives=2` (main route + 2 alternatives). Keep the alternatives that are distinct from the main route. If fewer than 3 routes remain, make one extra request with `avoidAreas` ([ADR-0005](adr/0005-three-route-strategy.md)).
    2. **Checkpoints.** Place a checkpoint every N miles along each route, plus one at the destination. Estimate each checkpoint's ETA from TomTom's `progress[]` data, adding rest breaks if that option is on ([ADR-0006](adr/0006-checkpoint-eta-and-forecast-matching.md), [ADR-0008](adr/0008-optional-driver-rest-breaks.md)).
    3. **Weather locations.** Every checkpoint, plus a sample every 5 miles along every route, rounded to 0.1° (about 7 miles) so nearby points share one forecast. The same locations serve checkpoints and the heatmap (section 6).
    4. **Weather.** Make **one bulk Open-Meteo request** for all locations, covering the **departure hour** to `max(departure + 48 h, latest ETA)`, and cache the result.
@@ -102,6 +102,7 @@ Response (shortened):
       "id": "route-1",
       "rank": 1,
       "is_recommended": true,
+      "ranking_reason": "Same weather risk as Route 2, and 26 m faster.",
       "summary": {
         "distance_miles": 967.4,
         "travel_time_seconds": 52200,
@@ -136,6 +137,7 @@ Response (shortened):
 
 Format rules:
 - Routes are ordered by rank.
+- `ranking_reason` names the first ranking rule that separates a route from its neighbour: the recommended route is compared with the runner-up, every other route with the route ranked just above it.
 - `geometry` uses GeoJSON order, `[lon, lat]`.
 - All times are UTC. The frontend converts them to local time for display.
 - Risk levels are enum names (`LOW` … `NO_TRAVEL`).
@@ -217,6 +219,7 @@ frontend/src/
 │   ├── SearchForm.tsx        inputs + submit (pre-filled with Denver → Salt Lake City)
 │   ├── PlaceAutocomplete.tsx reusable for origin and destination
 │   ├── RouteCard.tsx         one route's summary; click to select it
+│   ├── RankingExplainer.tsx  collapsed "How routes are ranked": the 5 rules + average-risk formula
 │   ├── RiskBadge.tsx         colour + text label (accessible)
 │   ├── StatusBanner.tsx      loading / "waking up server" / errors with request ID / warnings
 │   └── map/

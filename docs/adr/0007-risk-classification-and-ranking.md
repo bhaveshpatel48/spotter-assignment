@@ -42,6 +42,6 @@ If every route has No Travel miles, the best route is still recommended, togethe
 - **Leaving No Travel out of the ranking, as the brief does.** Rejected. A route with No Travel miles must never beat a route with only Severe miles.
 
 ## Consequences
-- The ranking is deterministic and easy to explain. Each route summary can show why it ranked where it did.
+- The ranking is deterministic and easy to explain. Each route carries a `ranking_reason` generated from the same ranking rules (e.g. *"Same weather risk as Route 2, and 26 m faster."*), so the explanation can never disagree with the ranking.
 - Classification and ranking are pure functions with table-driven unit tests, including every boundary value.
 - These interpretations are documented in [SCOPE.md](../SCOPE.md#rule-interpretations).

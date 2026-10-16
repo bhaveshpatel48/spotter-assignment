@@ -8,7 +8,13 @@ from trip_planning.models import (
     RouteSummary,
     WeatherSample,
 )
-from trip_planning.ranking import average_risk, has_no_safe_route, miles_by_risk, rank_order
+from trip_planning.ranking import (
+    average_risk,
+    has_no_safe_route,
+    miles_by_risk,
+    rank_order,
+    ranking_reasons,
+)
 
 T = datetime(2026, 10, 16, tzinfo=UTC)
 CALM = WeatherSample(wind_mph=0, gust_mph=0, rain_in_hr=0, snow_in_hr=0)
@@ -79,3 +85,46 @@ def test_ties_keep_provider_order():
 def test_no_safe_route_only_when_every_route_has_no_travel_miles():
     assert has_no_safe_route([summary(no_travel=1), summary(no_travel=5)])
     assert not has_no_safe_route([summary(no_travel=1), summary()])
+
+
+def test_reason_when_only_travel_time_differs():
+    # The real Denver -> Salt Lake City case: all Low risk, the fastest route wins.
+    fast, slow, slowest = (
+        summary(travel_s=27_240),
+        summary(travel_s=32_220),
+        summary(travel_s=39_000),
+    )
+    assert ranking_reasons([slow, fast, slowest]) == [
+        "Same weather risk as Route 1, but 1 h 23 m slower.",
+        "Same weather risk as Route 2, and 1 h 23 m faster.",
+        "Same weather risk as Route 2, but 1 h 53 m slower.",
+    ]
+
+
+def test_reason_names_the_first_rule_that_differs():
+    safe, severe = summary(high=40), summary(severe=25)
+    assert ranking_reasons([severe, safe]) == [
+        "More Severe miles than Route 1 (25 vs 0 mi).",
+        "Fewer Severe miles than Route 2 (0 vs 25 mi).",
+    ]
+
+
+def test_reason_for_no_travel_high_and_average_risk():
+    no_travel = summary(no_travel=10)
+    high = summary(high=30)
+    lower_avg, higher_avg = summary(avg=0.1), summary(avg=0.4)
+    assert (
+        ranking_reasons([no_travel, high])[0] == "More No Travel miles than Route 1 (10 vs 0 mi)."
+    )
+    assert ranking_reasons([high, lower_avg])[0] == "More High miles than Route 1 (30 vs 0 mi)."
+    assert ranking_reasons([lower_avg, higher_avg]) == [
+        "Lower average risk than Route 2 (0.10 vs 0.40).",
+        "Higher average risk than Route 1 (0.40 vs 0.10).",
+    ]
+
+
+def test_reason_for_identical_and_single_routes():
+    assert ranking_reasons([summary(), summary()])[0] == (
+        "Same weather risk and travel time as Route 2."
+    )
+    assert ranking_reasons([summary()]) == ["The only practical route for this trip."]
