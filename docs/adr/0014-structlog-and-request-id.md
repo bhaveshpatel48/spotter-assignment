@@ -29,7 +29,7 @@ It must be possible to trace everything that happened during one request, across
   | `provider.called` | provider, endpoint, status, duration_ms |
   | `provider.failed` | provider, endpoint, error_type |
   | `provider.quota_exceeded` | provider |
-  | `cache.hit` / `cache.miss` | cache_key_prefix |
+  | `weather.requested` | location_count, cached, fetched, hours |
 
 - No secrets (API keys) or full addresses are logged.
 

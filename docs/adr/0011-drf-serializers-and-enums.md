@@ -9,7 +9,6 @@ Inside the backend, data passes between the provider clients and the planning fu
 Several values come from a fixed set:
 - risk levels;
 - checkpoint spacing;
-- weather conditions;
 - log event names.
 
 ## Decision
@@ -21,7 +20,6 @@ Several values come from a fixed set:
 - **Python enums** hold every fixed set of values:
   - `RiskLevel` (`IntEnum`: `LOW=0` to `NO_TRAVEL=4`, so levels can be compared and averaged);
   - `CheckpointSpacing` (10 / 25 / 50 miles);
-  - `WeatherCondition` (wind / rain / snow);
   - `EventName` (see [ADR-0014](0014-structlog-and-request-id.md)).
 - Both serializers (`ChoiceField`) and pydantic models use these enums, so allowed values are defined in a single place.
 

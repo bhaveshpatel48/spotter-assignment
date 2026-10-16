@@ -112,7 +112,7 @@ The brief leaves some details open. The application uses these interpretations.
 To stay within these limits:
 - Autocomplete waits 300 ms after typing stops and needs at least 3 characters before it sends a request.
 - Geocoding results are cached in Django.
-- Weather checkpoints are snapped to a 0.1° grid and duplicates are removed before one bulk forecast request is made.
+- Weather for all checkpoints (at about 7-mile precision) and the heatmap grid is fetched in one bulk forecast request of at most 550 locations.
 
 ---
 
