@@ -8,7 +8,9 @@ The app must be hosted for free, with no credit card.
 It should run the same way locally and in production, and reviewers should be able to start it with one command.
 
 ## Decision
-**Hosting on Render**, described in one `render.yaml` blueprint in the repository:
+**Hosting on Render**, with two services created in the Render dashboard:
+
+> Note (2026-10-16): an earlier draft described the services in a `render.yaml` blueprint. The services were created in the dashboard instead, so the file was dropped; the README's Deployment section records their settings.
 
 | Part | Render service | Why |
 |---|---|---|

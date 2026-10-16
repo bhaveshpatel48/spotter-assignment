@@ -306,7 +306,7 @@ The steps run in this order. Each step finishes with a check that confirms it is
 | 8 | **Open-Meteo client.** | A bulk forecast request is parsed and cached. |
 | 9 | **Heatmap grid, `plan_trip()`, and the `/api/geocode` and `/api/plan` endpoints.** Deploy the bare backend to Render early. | `POST /api/plan` returns 3 ranked routes with checkpoints and heatmap data, both locally and on Render. |
 | 10 | **React app:** search form + autocomplete → map + routes + checkpoints → route cards → heatmap + slider. | The full flow works in the browser against the local backend. |
-| 11 | **Packaging:** Dockerfiles, `docker-compose.yml`, `render.yaml`, Gunicorn with 1 worker × 4 threads, and the complete Makefile. | `make up` works, and the hosted app works end to end. |
+| 11 | **Packaging:** Dockerfiles, `docker-compose.yml`, the two Render services, Gunicorn with 1 worker × 4 threads, and the complete Makefile. | `make up` works, and the hosted app works end to end. |
 | 12 | **Polish:** error states, cold-start banner, slider profiling. | Slider updates stay under 16 ms. |
 | 13 | **README** (with a key-decisions table) and **Loom walkthrough**. | Both deliverables are done. |
 
