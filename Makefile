@@ -1,4 +1,4 @@
-.PHONY: install dev backend-dev frontend-dev test backend-test frontend-test \
+.PHONY: install dev backend-dev frontend-dev up down test backend-test frontend-test \
 	lint backend-lint frontend-lint format
 
 # Load .env (if present) into every recipe's environment.
@@ -22,6 +22,13 @@ backend-dev:
 
 frontend-dev:
 	cd frontend && npm run dev
+
+# Production images via Docker: app on :8080, API on :8000.
+up:
+	docker compose up --build
+
+down:
+	docker compose down
 
 test: backend-test frontend-test
 
