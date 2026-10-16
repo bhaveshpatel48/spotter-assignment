@@ -24,6 +24,8 @@ GEOCODE_LIMIT = 5
 GEOCODE_INDEXES = "Geo,PAD,Addr,Str,XStr"
 # Routing error codes that mean "no drivable route", as opposed to a service failure.
 NO_ROUTE_CODES = {"NO_ROUTE_FOUND", "MAP_MATCHING_FAILURE"}
+# Long truck routes with traffic and alternatives can take longer than the default provider timeout.
+ROUTING_TIMEOUT_SECONDS = 25.0
 
 logger = structlog.get_logger(__name__)
 
@@ -154,10 +156,18 @@ def calculate_routes(
     ]
     url = f"{BASE_URL}/routing/1/calculateRoute/{locations}/json"
     if avoid is None:
-        response = http.send(PROVIDER, "calculateRoute", "GET", url, params=params)
+        response = http.send(
+            PROVIDER, "calculateRoute", "GET", url, timeout=ROUTING_TIMEOUT_SECONDS, params=params
+        )
     else:
         response = http.send(
-            PROVIDER, "calculateRoute", "POST", url, params=params, json=_avoid_body(avoid)
+            PROVIDER,
+            "calculateRoute",
+            "POST",
+            url,
+            timeout=ROUTING_TIMEOUT_SECONDS,
+            params=params,
+            json=_avoid_body(avoid),
         )
 
     if response.status_code == 400 and _error_code(response) in NO_ROUTE_CODES:

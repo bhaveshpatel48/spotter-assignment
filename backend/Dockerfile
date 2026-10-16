@@ -23,4 +23,4 @@ USER app
 EXPOSE 8000
 
 # One worker so every request shares the in-process cache; threads overlap API waits (ADR-0013).
-CMD ["sh", "-c", "gunicorn config.wsgi:application --bind 0.0.0.0:${PORT} --workers 1 --threads 4 --timeout 60"]
+CMD ["sh", "-c", "gunicorn config.wsgi:application --bind 0.0.0.0:${PORT} --workers 1 --threads 4 --timeout 120"]

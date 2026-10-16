@@ -156,7 +156,7 @@ Every error has the same shape:
 | 502 | `PROVIDER_ERROR` | TomTom or Open-Meteo fails, after one retry on connection errors and 5xx responses. |
 | 503 | `PROVIDER_QUOTA_EXCEEDED` | TomTom returns `403` (over quota) or Open-Meteo returns `429` (rate limited). |
 | 503 | `PROVIDER_NOT_CONFIGURED` | The TomTom API key is missing on the server. |
-| 504 | `PROVIDER_TIMEOUT` | TomTom doesn't respond within 10 s, or Open-Meteo within 30 s. |
+| 504 | `PROVIDER_TIMEOUT` | TomTom doesn't respond within 10 s (search) or 25 s (routing), or Open-Meteo within 30 s. |
 
 ---
 
