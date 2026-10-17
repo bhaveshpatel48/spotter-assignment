@@ -2,7 +2,7 @@
 
 A React + Django app that helps a truck driver choose the safest route. It compares up to 3 truck routes using the weather forecast **at the time the truck reaches each point**, the load weight, and travel time.
 
-**Live app:** https://spotter-truck-routing-ui.onrender.com · **Loom walkthrough:** _TODO: add link_ · **Docs:** [Scope](docs/SCOPE.md) · [Architecture](docs/ARCHITECTURE.md) · [Decision records](docs/adr/README.md)
+**Live app:** https://spotter-truck-routing-ui.onrender.com · **Loom walkthrough:** https://www.loom.com/share/4fcebf22aa3c4c418d21a3d0e4798416 · **Docs:** [Scope](docs/SCOPE.md) · [Architecture](docs/ARCHITECTURE.md) · [Decision records](docs/adr/README.md)
 
 > The backend runs on Render's free plan and sleeps after 15 minutes idle. The first search after that takes about a minute while it wakes up. The app shows a "Waking up the server…" message meanwhile.
 
